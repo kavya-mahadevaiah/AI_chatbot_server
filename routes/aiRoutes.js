@@ -1,93 +1,114 @@
+// backend/routes/aiRoutes.js
 const express = require("express");
-const router = express.Router();
 const axios = require("axios");
+const mongoose = require("mongoose");
 const Chat = require("../models/Chat");
 const Message = require("../models/Message");
 const { protect } = require("../middleware/authMiddleware");
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const OPENROUTER_BASE_URL = process.env.OPENROUTER_BASE_URL;
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL;
-const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER;
-const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE;
+const router = express.Router();
 
-// POST /api/chat
+/* ENV */
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324:free";
+const OPENROUTER_URL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "http://localhost:3000";
+const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "Chatbot";
+
+const HISTORY_LIMIT = 12;
+
+/* helper: get plain string reply from provider data */
+function extractReply(data) {
+  if (!data || !Array.isArray(data.choices) || !data.choices[0]) return "";
+
+  const choice = data.choices[0];
+
+  // Standard OpenRouter / OpenAI style
+  if (choice.message && choice.message.content) {
+    return String(choice.message.content).trim();
+  }
+
+  // Some models respond with .text
+  if (choice.text) return String(choice.text).trim();
+
+  // Some respond with delta objects
+  if (choice.delta && choice.delta.content) {
+    return String(choice.delta.content).trim();
+  }
+
+  return "";
+}
+
+
+/* POST /api/chat  — send message, call model, save both messages, return reply */
 router.post("/", protect, async (req, res) => {
-  const { message, chatId } = req.body;
-
-  // 1. Validate input
-  if (!message || !chatId) {
-    return res.status(400).json({ error: "Message and chatId are required." });
-  }
-
-  // 2. Ensure user owns the chat
-  const chat = await Chat.findById(chatId);
-  if (!chat || chat.user.toString() !== req.user._id.toString()) {
-    return res.status(403).json({ error: "Unauthorized or chat not found." });
-  }
-
   try {
-    // 3. Fetch existing message history for the chat
-    const previousMessages = await Message.find({ chatId }).sort({ createdAt: 1 });
+    if (!OPENROUTER_API_KEY) {
+      return res.status(500).json({ error: "Missing OPENROUTER_API_KEY" });
+    }
 
-    // 4. Format the messages for OpenRouter
-    const chatHistory = previousMessages.map((msg) => ({
-      role: msg.role === "bot" ? "assistant" : "user",
-      content: msg.text,
+    const message = req.body && req.body.message ? String(req.body.message) : "";
+    const chatId = req.body && req.body.chatId ? String(req.body.chatId) : "";
+
+    if (!message) return res.status(400).json({ error: "Message is required." });
+    if (!mongoose.isValidObjectId(chatId)) return res.status(400).json({ error: "Invalid chat id." });
+
+    const chat = await Chat.findOne({ _id: chatId, user: req.user._id });
+    if (!chat) return res.status(404).json({ error: "Chat not found." });
+
+    // history (oldest → newest), keep last N
+    const docs = await Message.find({ chatId, user: req.user._id })
+      .sort({ createdAt: 1 })
+      .select("role text")
+      .lean();
+
+    const tail = docs.slice(-HISTORY_LIMIT).map((m) => ({
+      role: m.role === "bot" ? "assistant" : "user",
+      content: m.text,
     }));
 
-    // 5. Append the current user message
-    chatHistory.push({ role: "user", content: message });
+    const payload = {
+      model: OPENROUTER_MODEL,
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        ...tail,
+        { role: "user", content: message },
+      ],
+    };
 
-    // 6. Call OpenRouter API
-    const response = await axios.post(
-      `${OPENROUTER_BASE_URL}/chat/completions`,
-      {
-        model: OPENROUTER_MODEL,
-        messages: [
-          { role: "system", content: "You are a helpful assistant." },
-          ...chatHistory,
-        ],
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": OPENROUTER_REFERER,
-          "X-Title": OPENROUTER_TITLE,
-        },
-      }
-    );
+    const headers = {
+      Authorization: "Bearer " + OPENROUTER_API_KEY,
+      "Content-Type": "application/json",
+      "HTTP-Referer": OPENROUTER_REFERER,
+      "X-Title": OPENROUTER_TITLE,
+    };
 
-    const botReply = response.data.choices?.[0]?.message?.content || "No reply.";
+    const r = await axios.post(OPENROUTER_URL, payload, { headers, timeout: 90000 });
 
-    // 7. Save user message and bot reply to Message collection
-    const userMsg = new Message({
+    const botReply = extractReply(r.data);
+    if (!botReply) return res.status(502).json({ error: "AI returned empty response" });
+
+    // persist both messages
+    const userMsg = await Message.create({
       chatId,
       user: req.user._id,
       role: "user",
       text: message,
     });
 
-    const botMsg = new Message({
+    await Message.create({
       chatId,
       user: req.user._id,
       role: "bot",
       text: botReply,
+      pairId: userMsg._id,
     });
 
-    await userMsg.save();
-    await botMsg.save();
+    await Chat.updateOne({ _id: chatId }, { $set: { updatedAt: new Date() } });
 
-    // 8. Update chat timestamp
-    chat.updatedAt = new Date();
-    await chat.save();
-
-    // 9. Return reply to frontend
-    return res.status(200).json({ reply: botReply });
+    return res.json({ reply: botReply });
   } catch (err) {
-    console.error("❌ OpenRouter Error:", err.response?.data || err.message);
-    return res.status(500).json({ error: "OpenRouter failed to respond." });
+    return res.status(502).json({ error: "AI request failed" });
   }
 });
 
