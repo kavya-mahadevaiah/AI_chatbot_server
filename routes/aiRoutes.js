@@ -10,7 +10,7 @@ const router = express.Router();
 
 /* ENV */
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324:free";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "deepseek/deepseek-chat-v3-0324";
 const OPENROUTER_URL = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || "http://localhost:3000";
 const OPENROUTER_TITLE = process.env.OPENROUTER_TITLE || "Chatbot";

@@ -1,8 +1,9 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const Chat = require("../models/Chat");
 const Message = require("../models/Message");
 const { protect } = require("../middleware/authMiddleware");
+const mongoose = require("mongoose");
+
 
 const router = express.Router();
 
@@ -97,7 +98,13 @@ router.delete("/:id", protect, async (req, res) => {
 
     return res.json({ success: true });
   } catch (e) {
-    return res.status(500).json({ error: "Failed to delete chat." });
+    console.error("DELETE /api/chats/:id failed:", e);
+  return res.status(500).json({
+    error: "Failed to delete chat.",
+    details: e.message,
+    name: e.name,
+    code: e.code,
+  });
   }
 });
 
