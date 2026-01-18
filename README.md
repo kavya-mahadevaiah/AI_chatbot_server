@@ -3,8 +3,8 @@
 Backend for an AI chatbot app with **OpenRouter integration**, **JWT-protected APIs**, and **MongoDB persistence** for chats and messages.
 
 ## Demo
-- API: <ADD_YOUR_RENDER_URL>
-- Client repo: <LINK_TO_AI_CHATBOT_CLIENT>
+- API: <https://crime-prediction-model-backend.onrender.com>
+- Client repo: <https://ai-chatbot-client-omega.vercel.app/>
 
 ## Features
 - Create chat sessions, add messages, fetch chat history
