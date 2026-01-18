@@ -1,4 +1,9 @@
 # AI Chatbot — Server (Node/Express)
+![Node](https://img.shields.io/badge/Node.js-black?logo=node.js&logoColor=3C873A)
+![Express](https://img.shields.io/badge/Express-black?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-black?logo=mongodb&logoColor=47A248)
+![CI](https://github.com/kavya-mahadevaiah/AI_chatbot_server/actions/workflows/ci.yml/badge.svg)
+
 
 Backend for an AI chatbot app with **OpenRouter integration**, **JWT-protected APIs**, and **MongoDB persistence** for chats and messages.
 
