@@ -1,48 +1,51 @@
+# AI Chatbot — Server (Node/Express)
 
-# 📄 `chatbot-backend/README.md`
+Backend for an AI chatbot app with **OpenRouter integration**, **JWT-protected APIs**, and **MongoDB persistence** for chats and messages.
 
-```markdown
-# AI Chatbot - Backend
-
-This is the backend for the AI Chatbot.  
-It handles authentication, chat management, and AI replies via OpenRouter.
+## Demo
+- API: <ADD_YOUR_RENDER_URL>
+- Client repo: <LINK_TO_AI_CHATBOT_CLIENT>
 
 ## Features
-- User registration and login with JWT
-- Protected routes with middleware
-- Create, fetch, and delete chat sessions
-- AI replies integrated with OpenRouter
-- MongoDB persistence for users and chats
-- Secure password hashing with bcrypt
+- Create chat sessions, add messages, fetch chat history
+- Calls OpenRouter for AI replies
+- Persists user + bot messages in MongoDB
+- JWT-protected endpoints
+- Clean API structure with middleware
 
 ## Tech Stack
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT (authentication)
-- Bcrypt (password hashing)
-- Axios (API calls)
+- Node.js, Express
+- MongoDB, Mongoose
+- OpenRouter API
+- JWT Auth
 
-## Setup
-1. Install dependencies:
-   ```bash
-   npm install
+## API Endpoints (example)
+- `POST /api/chat` — send message, get AI response, save messages
+- `GET /api/chats` — list chats for user
+- `GET /api/chats/:id` — get messages for a chat
+- `DELETE /api/chats/:id` — delete chat
 
-2. Create a .env file:
-   PORT=5000
-   MONGO_URI=your-mongo-uri
-   JWT_SECRET=your-secret
-   OPENROUTER_API_KEY=your-key
+## Environment Variables
+- Create .env:
+PORT=5000
+MONGO_URI=
+JWT_SECRET=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+OPENROUTER_REFERER=http://localhost:3000
 
-3. Run locally:
-    npm start
+## Roadmap
+- Rate limiting + request validation
+- Streaming responses
+- Better logging/monitoring (pino)
 
-## API Endpoints
--> POST /api/users/register → Register a new user
--> POST /api/users/login → Login and get token
--> GET /api/chats → Fetch user chats
--> POST /api/chats → Create a new chat
--> GET /api/chats/:id → Get chat messages
--> DELETE /api/chats/:id → Delete chat
--> POST /api/chat → Send message and get AI reply
-
-
+## Also add a file: **.env.example**
+```env
+PORT=5000
+MONGO_URI=
+JWT_SECRET=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=
+OPENROUTER_BASE_URL=
+OPENROUTER_REFERER=
