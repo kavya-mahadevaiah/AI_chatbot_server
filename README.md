@@ -27,25 +27,21 @@ Backend for an AI chatbot app with **OpenRouter integration**, **JWT-protected A
 
 ## Environment Variables
 - Create .env:
-PORT=5000
-MONGO_URI=
-JWT_SECRET=
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
-OPENROUTER_REFERER=http://localhost:3000
+  - PORT=5000
+  - MONGO_URI=
+  - JWT_SECRET=
+  - OPENROUTER_API_KEY=
+  - OPENROUTER_MODEL=deepseek/deepseek-chat-v3-0324:free
+  - OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+  - OPENROUTER_REFERER=http://localhost:3000
 
 ## Roadmap
 - Rate limiting + request validation
 - Streaming responses
 - Better logging/monitoring (pino)
 
-## Also add a file: **.env.example**
-```env
-PORT=5000
-MONGO_URI=
-JWT_SECRET=
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=
-OPENROUTER_BASE_URL=
-OPENROUTER_REFERER=
+## Getting Started (Local)
+```bash
+npm install
+cp .env.example .env
+npm run dev
