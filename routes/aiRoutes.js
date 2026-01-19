@@ -44,6 +44,12 @@ function extractReply(data) {
   return "";
 }
 
+console.log("OPENROUTER ENV CHECK", {
+  hasKey: !!process.env.OPENROUTER_API_KEY,
+  prefix: process.env.OPENROUTER_API_KEY?.slice(0, 8),
+  len: process.env.OPENROUTER_API_KEY?.length,
+});
+
 /* POST /api/chat  — send message, call model, save both messages, return reply */
 router.post("/", protect, async (req, res) => {
   const rid = Math.random().toString(16).slice(2); // correlation id for logs
